@@ -1,30 +1,31 @@
 %YAML:1.0
 ---
 # ###### CAMERA PARAMETERS ######
-video width: 640
-video height: 480
-camera fx: 1044.87
-camera fy: 1045.69141
-camera cx: 320
-camera cy: 240
+video width: 1280
+video height: 720
+camera fx: 749.8203735351562
+camera fy: 749.7190551757812
+camera cx: 640.7588500976562
+camera cy: 364.8509216308594
 
 distortion parameters: !!opencv-matrix
    rows: 1
    cols: 5
    dt: d
-   data: [ -2.7167827743927644e-03, 2.0942424424199252e-01,
-       1.1120545920170163e-03, -6.6420567497010334e-03, 0. ]
+   data: [ 0.07101956754922867, -0.09848150610923767,
+       0.00043707378790713847, 0.0001285719481529668,
+       0.039714131504297256 ]
 # ###### TEMPLATE GENERATION SETTINGS ######
 model folder: models/
 model file ending: ".ply"
 only use color modality: 1
-in plane rotation starting angle: -45
-in plane rotation stopping angle: 45
+in plane rotation starting angle: -20
+in plane rotation stopping angle: 20
 in plane rotation angle step: 10
 distance start: 500
-distance stop: 1200
-distance step: 50
-icosahedron subdivisions: 3
+distance stop: 900
+distance step: 100
+icosahedron subdivisions: 1
 # ###### TEMPLATE DETECTOR SETTINGS ######
 detector threshold: 80
 percent to pass check: 50

@@ -6,16 +6,21 @@
 //#include <csignal>
 #include <opencv2/opencv.hpp>
 
+#ifdef USE_FREENECT2
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 #include <libfreenect2/logger.h>
+#else
+#include <stdexcept>
+#endif
 
 /**
  * @brief Class that wraps the communication with the Kinect V2 in a high level interface
  * 
  */
+#ifdef USE_FREENECT2
 class Kinect2
 {
 public:
@@ -41,3 +46,15 @@ private:
 	cv::Mat rgbmat, depthmat, depthmatUndistorted, rgbd, rgbd2, croppedBgr, croppedDepth;
 	libfreenect2::SyncMultiFrameListener* listener;
 };
+#else
+class Kinect2
+{
+public:
+	Kinect2() = default;
+	~Kinect2() = default;
+	void getKinectFrames(cv::Mat&, cv::Mat&)
+	{
+		throw std::runtime_error("Kinect2 support is disabled (USE_FREENECT2=OFF).");
+	}
+};
+#endif

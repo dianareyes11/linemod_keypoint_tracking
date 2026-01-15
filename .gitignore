@@ -38,3 +38,19 @@
 build/
 
 #Ignore Benchmark and model files
+
+# ROS2 workspace artifacts
+ros2/build/
+ros2/install/
+ros2/log/
+
+# Root-level colcon artifacts (if built from repo root)
+install/
+log/
+
+# Bag files
+bags/
+
+# Generated templates
+linemod_templates.yml.gz
+linemod_tempPosFile.bin

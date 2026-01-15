@@ -1,4 +1,5 @@
 #include "OpenglRender.h"
+#include <stdexcept>
 
 OpenGLRender::OpenGLRender(CameraParameters const& in_camParams)
 {
@@ -158,7 +159,10 @@ void OpenGLRender::readModelFile(std::string const& in_file, Model& in_model)
 
 void OpenGLRender::setupSDLWindow()
 {
-	SDL_Init(SDL_INIT_EVERYTHING);
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		throw std::runtime_error(std::string("SDL_Init failed: ") + SDL_GetError());
+	}
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -174,7 +178,15 @@ void OpenGLRender::setupSDLWindow()
 	uint32_t flags = SDL_WINDOW_OPENGL;
 	window = SDL_CreateWindow("Render Window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 	                          width, height, flags);
+	if (!window)
+	{
+		throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
+	}
 	SDL_GLContext glContext = SDL_GL_CreateContext(window);
+	if (!glContext)
+	{
+		throw std::runtime_error(std::string("SDL_GL_CreateContext failed: ") + SDL_GetError());
+	}
 }
 
 void OpenGLRender::setupOpenGL()
@@ -182,8 +194,8 @@ void OpenGLRender::setupOpenGL()
 	GLenum errorMsg = glewInit();
 	if (errorMsg != GLEW_OK)
 	{
-		std::cout << "Error: " << glewGetErrorString(errorMsg) << std::endl;
-		std::cin.get();
+		throw std::runtime_error(std::string("GLEW init failed: ") +
+		                         reinterpret_cast<const char*>(glewGetErrorString(errorMsg)));
 	}
 	else
 	{

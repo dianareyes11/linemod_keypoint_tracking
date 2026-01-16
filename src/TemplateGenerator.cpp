@@ -65,6 +65,12 @@ void TemplateGenerator::createCamViewPoints(float in_radiusToModel)
 {
 	camPoints->createCameraViewPoints(in_radiusToModel, subdivisions);
 	camVertices = camPoints->getVertices();
+	// Keep only viewpoints well above the model's XY plane for scanned models.
+	const float minZ = in_radiusToModel * 0.4f;
+	camVertices.erase(
+		std::remove_if(camVertices.begin(), camVertices.end(),
+		               [minZ](const glm::vec3& v) { return v.z < minZ; }),
+		camVertices.end());
 	numCameraVertices = camVertices.size();
 }
 

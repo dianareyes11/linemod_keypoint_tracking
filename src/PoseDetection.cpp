@@ -65,8 +65,10 @@ void PoseDetection::detect(std::vector<cv::Mat>& in_imgs, std::string const& in_
 	finalObjectPoses.clear();
 	line->detectTemplate(inputImg, numClassIndex);
 	detectedPoses = line->getObjectPoses();
+	std::cout << "Detected pose groups: " << detectedPoses.size() << std::endl;
 	if (!detectedPoses.empty())
 	{
+		std::cout << "Detected poses in first group: " << detectedPoses[0].size() << std::endl;
 		for (auto& detectedPose : detectedPoses)
 		{
 			if (templateSettings.useIcp)

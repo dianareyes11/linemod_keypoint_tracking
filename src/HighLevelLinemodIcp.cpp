@@ -40,8 +40,14 @@ void HighLevelLinemodIcp::prepareDepthForIcp(cv::Mat& in_depth, const cv::Mat& i
 {
 	cv::Mat blurredDepth;
 	cv::blur(in_depth, blurredDepth, cv::Size(3, 3));
-	cv::Mat mask = cv::Mat::zeros(cv::Size(640, 480), CV_8U);
+	cv::Mat mask = cv::Mat::zeros(blurredDepth.size(), CV_8U);
 	cv::rectangle(mask, bb, cv::Scalar(255, 255, 255), -1);
+	if (blurredDepth.size() != mask.size())
+	{
+		std::cout << "ICP depth/mask size mismatch: depth="
+		          << blurredDepth.cols << "x" << blurredDepth.rows
+		          << " mask=" << mask.cols << "x" << mask.rows << std::endl;
+	}
 
 	cv::Mat_<cv::Vec3f> pointsModel;
 	cv::rgbd::depthTo3d(blurredDepth, in_camMatrix, pointsModel, mask);

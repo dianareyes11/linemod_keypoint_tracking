@@ -19,20 +19,20 @@ distortion parameters: !!opencv-matrix
 model folder: models/
 model file ending: ".ply"
 only use color modality: 1
-in plane rotation starting angle: -20
-in plane rotation stopping angle: 20
-in plane rotation angle step: 10
+in plane rotation starting angle: -180
+in plane rotation stopping angle: 180
+in plane rotation angle step: 5
 distance start: 500
 distance stop: 900
-distance step: 100
-icosahedron subdivisions: 1
+distance step: 200
+icosahedron subdivisions: 3
 # ###### TEMPLATE DETECTOR SETTINGS ######
 detector threshold: 80
 percent to pass check: 50
 number of poses to compare: 1
 distance to match to be considered same object: 45
 ratio to determine if group is too small: 35
-use depth improvement: 1
+use depth improvement: 0
 depth offset: 30
 use icp: 0
 icp subsampling factor: 2

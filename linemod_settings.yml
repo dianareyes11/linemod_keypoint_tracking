@@ -18,23 +18,23 @@ distortion parameters: !!opencv-matrix
 # ###### TEMPLATE GENERATION SETTINGS ######
 model folder: models/
 model file ending: ".ply"
-only use color modality: 0
+only use color modality: 1
 in plane rotation starting angle: -180
 in plane rotation stopping angle: 180
-in plane rotation angle step: 5
+in plane rotation angle step: 20
 distance start: 500
 distance stop: 900
 distance step: 200
-icosahedron subdivisions: 3
+icosahedron subdivisions: 1
 # ###### TEMPLATE DETECTOR SETTINGS ######
-detector threshold: 70
+detector threshold: 80
 percent to pass check: 50
 number of poses to compare: 1
 distance to match to be considered same object: 45
 ratio to determine if group is too small: 35
-use depth improvement: 1
+use depth improvement: 0
 depth offset: 30
-use icp: 1
-icp subsampling factor: 1
+use icp: 0
+icp subsampling factor: 2
 
 

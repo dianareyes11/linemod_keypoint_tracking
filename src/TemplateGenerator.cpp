@@ -2,7 +2,6 @@
 
 TemplateGenerator::TemplateGenerator()
 {
-	CameraParameters camParams;
 	TemplateGenerationSettings templateSettings;
 	readSettings(camParams, templateSettings);
 	modelFolder = templateSettings.modelFolder;
@@ -13,6 +12,7 @@ TemplateGenerator::TemplateGenerator()
 
 	opengl = new OpenGLRender(camParams);
 	line = new HighLevelLineMOD(camParams, templateSettings);
+	keypointDetector = new KeypointDetector();
 	camPoints = new CameraViewPoints();
 	filesInDirectory(modelFiles, modelFolder, templateSettings.modelFileEnding);
 }
@@ -31,6 +31,10 @@ void TemplateGenerator::cleanup()
 	if (line)
 	{
 		delete line;
+	}
+	if (keypointDetector)
+	{
+		delete keypointDetector;
 	}
 	if (camPoints)
 	{
@@ -53,12 +57,21 @@ void TemplateGenerator::run()
 				printProgBar(calculateCurrentPercent(radiusToModel, j), modelFiles[i]);
 				std::vector<cv::Mat> images;
 				renderImages(images, i, j);
+				cv::Mat depth = images[1];
+				cv::Mat mask;
+				cv::threshold(depth, mask, 1, 255, cv::THRESH_BINARY);
+				mask.convertTo(mask, CV_8U);
+				cv::erode(mask, mask, cv::Mat(), cv::Point(-1, -1), 1);
+				keypointDetector->addTemplate(images[0], mask, depth, camParams,
+				                              camVertices[j]);
 				line->addTemplate(images, modelFiles[i], camVertices[j]);
 			}
 		}
 		line->pushBackTemplates();
+		keypointDetector->pushBackTemplates(modelFiles[i]);
 	}
 	line->writeLinemod();
+	keypointDetector->write("keypoint_templates.yml.gz");
 }
 
 void TemplateGenerator::createCamViewPoints(float in_radiusToModel)

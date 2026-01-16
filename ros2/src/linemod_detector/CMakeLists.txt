@@ -16,7 +16,10 @@ find_package(OpenCV REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glm REQUIRED)
-find_package(ASSIMP REQUIRED)
+find_package(assimp QUIET CONFIG)
+if (NOT assimp_FOUND)
+  find_package(ASSIMP QUIET)
+endif()
 find_package(OpenGL REQUIRED)
 
 set(LINEMOD_ROOT ${CMAKE_CURRENT_LIST_DIR}/../../..)
@@ -49,7 +52,9 @@ target_link_libraries(linemod_detector_node
   stdc++fs
 )
 
-if (ASSIMP_LIBRARIES)
+if (TARGET assimp::assimp)
+  target_link_libraries(linemod_detector_node assimp::assimp)
+elseif (ASSIMP_LIBRARIES)
   target_link_libraries(linemod_detector_node ${ASSIMP_LIBRARIES})
 else ()
   find_library(ASSIMP_LIBRARY NAMES assimp)

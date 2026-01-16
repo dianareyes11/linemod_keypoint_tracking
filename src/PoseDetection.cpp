@@ -7,6 +7,7 @@ PoseDetection::PoseDetection()
 	filesInDirectory(modelFiles, templateSettings.modelFolder, templateSettings.modelFileEnding);
 	opengl = new OpenGLRender(camParams);
 	line = new HighLevelLineMOD(camParams, templateSettings);
+	keypointDetector = new KeypointDetector();
 	icp = new HighLevelLinemodIcp(6, 0.1f, 2.5f, 8, templateSettings.icpSubsamplingFactor,
 	                              modelFiles, templateSettings.modelFolder);
 
@@ -36,6 +37,10 @@ void PoseDetection::cleanup()
 	{
 		delete icp;
 	}
+	if (keypointDetector)
+	{
+		delete keypointDetector;
+	}
 	if (bench)
 	{
 		delete bench;
@@ -58,6 +63,14 @@ void PoseDetection::detect(std::vector<cv::Mat>& in_imgs, std::string const& in_
 	translateImg(correctedTranslationDepth, -camParams.cx + camParams.videoWidth / 2,
 	             -camParams.cy + camParams.videoHeight / 2);
 
+	cv::Rect keypointBox;
+	cv::Mat keypointRvec;
+	cv::Mat keypointTvec;
+	int keypointInliers = 0;
+	bool keypointPoseValid = keypointDetector->estimatePose(
+		correctedTranslationColor, in_className, camParams.cameraMatrix,
+		camParams.distortionCoefficients, keypointBox, keypointRvec, keypointTvec,
+		keypointInliers);
 
 	inputImg.push_back(correctedTranslationColor);
 	inputImg.push_back(correctedTranslationDepth);
@@ -95,6 +108,20 @@ void PoseDetection::detect(std::vector<cv::Mat>& in_imgs, std::string const& in_
 		}
 		if (!finalObjectPoses.empty())
 		{
+			if (keypointPoseValid)
+			{
+				cv::Mat rotMat;
+				cv::Rodrigues(keypointRvec, rotMat);
+				glm::mat3 rotGlm;
+				fromCV2GLM(rotMat, &rotGlm);
+				glm::vec3 transVec(
+					static_cast<float>(keypointTvec.at<double>(0, 0)),
+					static_cast<float>(keypointTvec.at<double>(1, 0)),
+					static_cast<float>(keypointTvec.at<double>(2, 0)));
+				finalObjectPoses.clear();
+				finalObjectPoses.emplace_back(transVec, glm::toQuat(rotGlm),
+				                              finalObjectPoses[0].boundingBox);
+			}
 			if (bench)
 			{
 				float error = 1;
@@ -144,6 +171,11 @@ uint16_t PoseDetection::findIndexInVector(std::string const& in_stringToFind,
 void PoseDetection::readLinemodFromFile()
 {
 	line->readLinemod();
+	if (!keypointDetector->read("keypoint_templates.yml.gz"))
+	{
+		std::cout << "WARNING:: Keypoint templates not found: keypoint_templates.yml.gz" << std::
+			endl;
+	}
 	ids = line->getClassIds();
 	int num_classes = line->getNumClasses();
 	std::cout << "Loaded with " << num_classes << " classes and " << line->getNumTemplates() <<

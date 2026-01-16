@@ -21,7 +21,7 @@ model file ending: ".ply"
 only use color modality: 1
 in plane rotation starting angle: -180
 in plane rotation stopping angle: 180
-in plane rotation angle step: 20
+in plane rotation angle step: 5
 distance start: 500
 distance stop: 900
 distance step: 200

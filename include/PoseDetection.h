@@ -8,6 +8,7 @@
 #include "HighLevelLinemod.h"
 #include "HighLevelLinemodIcp.h"
 #include "Kinect2.h"
+#include "KeypointDetector.h"
 #include "utility.h"
 #include "Benchmark.h"
 
@@ -53,6 +54,7 @@ private:
 	OpenGLRender* opengl;
 	HighLevelLineMOD* line;
 	HighLevelLinemodIcp* icp;
+	KeypointDetector* keypointDetector;
 	Benchmark* bench;
 
 	std::vector<cv::Mat> inputImg;
@@ -60,6 +62,9 @@ private:
 	std::vector<ObjectPose> finalObjectPoses;
 	cv::Mat colorImg;
 	cv::Mat depthImg;
+	cv::Rect smoothedKeypointBox;
+	bool hasSmoothedKeypointBox = false;
+	float keypointSmoothingAlpha = 0.6f;
 
 	CameraParameters camParams;
 	TemplateGenerationSettings templateSettings;

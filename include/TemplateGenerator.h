@@ -5,6 +5,7 @@
 #include "defines.h"
 #include "utility.h"
 #include "HighLevelLinemod.h"
+#include "KeypointDetector.h"
 #include "OpenglRender.h"
 #include "CameraViewPoints.h"
 
@@ -37,11 +38,13 @@ public:
 private:
 	OpenGLRender* opengl;
 	HighLevelLineMOD* line;
+	KeypointDetector* keypointDetector;
 	CameraViewPoints* camPoints;
 	std::vector<glm::vec3> camVertices;
 
 	std::vector<std::string> modelFiles;
 	std::string modelFolder;
+	CameraParameters camParams;
 	uint16_t startDistance;
 	uint16_t endDistance;
 	uint16_t stepSize;

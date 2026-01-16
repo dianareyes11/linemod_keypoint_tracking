@@ -1,5 +1,7 @@
 #include "PoseDetection.h"
 
+#include <opencv2/highgui.hpp>
+
 PoseDetection::PoseDetection()
 {
 	readSettings(camParams, templateSettings);
@@ -40,10 +42,6 @@ void PoseDetection::cleanup()
 	if (keypointDetector)
 	{
 		delete keypointDetector;
-	}
-	if (bench)
-	{
-		delete bench;
 	}
 }
 
@@ -122,15 +120,6 @@ void PoseDetection::detect(std::vector<cv::Mat>& in_imgs, std::string const& in_
 				finalObjectPoses.emplace_back(transVec, glm::toQuat(rotGlm),
 				                              finalObjectPoses[0].boundingBox);
 			}
-			if (bench)
-			{
-				float error = 1;
-				error = bench->calculateErrorHodan(correctedTranslationDepth, opengl,
-				                                   finalObjectPoses[0], numClassIndex);
-				//error = bench->calculateErrorLM(finalObjectPoses[0]);
-				//error = bench->calculateErrorLMAmbigous(finalObjectPoses[0]);
-				std::cout << "Error: " << error << std::endl;
-			}
 			if (in_displayResults)
 			{
 				for (auto& finalObjectPose : finalObjectPoses)
@@ -143,22 +132,11 @@ void PoseDetection::detect(std::vector<cv::Mat>& in_imgs, std::string const& in_
 	}
 	if (in_displayResults)
 	{
-		if (bench)
-		{
-			bench->increaseImgCounter();
-		}
 		imshow("color", colorImg);
 		cv::waitKey(1);
 	}
 
 	inputImg.clear();
-}
-
-void PoseDetection::setupBenchmark(std::string const& in_className)
-{
-	bench = new Benchmark;
-	uint16_t numClassIndex = findIndexInVector(in_className, ids);
-	bench->loadModel(opengl, templateSettings.modelFolder + modelFiles[numClassIndex]);
 }
 
 uint16_t PoseDetection::findIndexInVector(std::string const& in_stringToFind,

@@ -4,7 +4,6 @@ project(LINE-MOD VERSION 0.1.0)
 include_directories(${CMAKE_SOURCE_DIR}/include/)
 add_definitions(-D GLM_ENABLE_EXPERIMENTAL=TRUE)
 option(USE_FREENECT2 "Enable Kinect v2 support via libfreenect2" OFF)
-option(BUILD_ARUCO_BENCHMARK "Build Aruco benchmark tool" OFF)
 # Add source files
 file(GLOB_RECURSE SOURCE_FILES 
 	${CMAKE_SOURCE_DIR}/src/*.c
@@ -20,11 +19,6 @@ if (NOT USE_FREENECT2)
 else ()
 	add_definitions(-DUSE_FREENECT2)
 endif ()
-
-if (NOT BUILD_ARUCO_BENCHMARK)
-	list(FILTER SOURCE_FILES EXCLUDE REGEX ".*/Aruco\\.cpp$")
-endif ()
-
 
 macro (add_executable _name)
 	_add_executable(${ARGV})
@@ -92,13 +86,7 @@ macro (add_executable _name)
 
 endmacro()
 
-
-
-add_executable(Detector detector.cpp ${HEADER_FILES} ${SOURCE_FILES})
 add_executable(Template_Generator templateGeneration.cpp ${HEADER_FILES} ${SOURCE_FILES})
-if (BUILD_ARUCO_BENCHMARK)
-	add_executable(Arcuo_Benchmark arucoBenchmark.cpp ${HEADER_FILES} ${SOURCE_FILES})
-endif ()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

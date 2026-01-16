@@ -29,6 +29,7 @@ file(GLOB_RECURSE LINEMOD_SOURCES
 
 list(FILTER LINEMOD_SOURCES EXCLUDE REGEX ".*/Kinect2\\.cpp$")
 list(FILTER LINEMOD_SOURCES EXCLUDE REGEX ".*/Aruco\\.cpp$")
+list(FILTER LINEMOD_SOURCES EXCLUDE REGEX ".*/Benchmark\\.cpp$")
 
 add_executable(linemod_detector_node
   src/linemod_detector_node.cpp

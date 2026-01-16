@@ -7,10 +7,8 @@
 #include "OpenglRender.h"
 #include "HighLevelLinemod.h"
 #include "HighLevelLinemodIcp.h"
-#include "Kinect2.h"
 #include "KeypointDetector.h"
 #include "utility.h"
-#include "Benchmark.h"
 
 /**
  * @brief High level class for the detection process
@@ -44,18 +42,11 @@ public:
 	            uint16_t const& in_numberOfObjects, std::vector<ObjectPose>& in_objPose,
 	            bool in_displayResults);
 
-	/**
-	 * @brief Call function once if benchmark is supposed to be used
-	 * 
-	 * @param in_className Name of the model to be benchmarked
-	 */
-	void setupBenchmark(std::string const& in_className);
 private:
 	OpenGLRender* opengl;
 	HighLevelLineMOD* line;
 	HighLevelLinemodIcp* icp;
 	KeypointDetector* keypointDetector;
-	Benchmark* bench;
 
 	std::vector<cv::Mat> inputImg;
 	std::vector<std::vector<ObjectPose>> detectedPoses;

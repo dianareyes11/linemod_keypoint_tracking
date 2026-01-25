@@ -72,7 +72,7 @@ In short: **LINEMOD proposes detections; keypoints + PnP stabilize the pose.**
 
 ---
 
-## 3) How the offline template generation works (simple diagram)
+## 3) How the offline template generation works 
 
 ```text
 [linemod_settings.yml]
@@ -107,7 +107,7 @@ This flow corresponds directly to the main loop in `TemplateGenerator::run()`.
 
 ---
 
-## 4) How runtime detection works (simple diagram)
+## 4) How runtime detection works 
 
 ```text
 [RGB + Depth input]
@@ -234,24 +234,3 @@ When everything is configured correctly, you can expect:
 
 
 ---
-
-## 8) Clean-code checklist for submission
-
-To keep the repository presentation-ready:
-
-- Avoid committing temporary outputs such as build folders:
-  - `build/`
-  - `ros2/build/`, `ros2/install/`, `ros2/log/`
-- Keep only required runtime artifacts and inputs:
-  - `linemod_settings.yml`
-  - generated templates (`*.yml.gz`, `*.bin`)
-  - models and shaders
-
----
-
-## 9) Key files to read first
-
-If you have limited time, start here:
-- Offline pipeline: `src/TemplateGenerator.cpp`
-- Runtime pipeline: `src/PoseDetection.cpp`
-- ROS 2 entrypoint: `ros2/src/linemod_detector/src/linemod_detector_node.cpp`

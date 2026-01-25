@@ -35,7 +35,7 @@ In short: **LINEMOD proposes detections; keypoints + PnP stabilize the pose.**
 
 ---
 
-## 2) Repository structure (what each part does)
+## 2) Repository structure 
 
 ### Top-level build and entrypoint
 - `CMakeLists.txt`  
@@ -136,33 +136,39 @@ Key behavior: if keypoint PnP succeeds, it can override the LINEMOD pose to reso
 
 ## 5) Installation and build instructions
 
-### 5.1 Core C++ build (offline template generator)
-
-From the repository root:
+1) **Create a workspace and clone**
 
 ```bash
+mkdir -p ~/cps_ws/src
+cd ~/cps_ws/src
+git clone https://github.com/dianareyes11/linemod_keypoint_tracking.git
+```
+
+2) **Install dependencies**
+
+```bash
+cd ~/cps_ws
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+```
+
+3) **Build**
+
+```bash
+cd ~/cps_ws
+colcon build --symlink-install
+source install/setup.bash
+```
+
+This builds the ROS 2 package and makes `linemod_detector_node` available.
+
+If you only need the offline template generator (no ROS 2), you can build it directly:
+
+```bash
+cd ~/cps_ws/src/linemod_keypoint_tracking
 cmake -S . -B build
 cmake --build build --config Release --target Template_Generator
 ```
-
-Run the offline generator:
-
-```bash
-./build/Template_Generator
-```
-
-The executable entrypoint is `templateGeneration.cpp`.
-
-### 5.2 ROS 2 node build (online detection)
-
-From the `ros2/` directory:
-
-```bash
-cd ros2
-colcon build --symlink-install --packages-select linemod_detector
-```
-
-This builds `linemod_detector_node`.
 
 ---
 
@@ -246,4 +252,3 @@ If you have limited time, start here:
 - Offline pipeline: `src/TemplateGenerator.cpp`
 - Runtime pipeline: `src/PoseDetection.cpp`
 - ROS 2 entrypoint: `ros2/src/linemod_detector/src/linemod_detector_node.cpp`
-

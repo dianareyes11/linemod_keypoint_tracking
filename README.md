@@ -8,7 +8,7 @@ This repository implements a practical 6D pose-estimation pipeline for known obj
 
 ---
 
-## 1) Problem solved and how
+## 1) Objective
 
 ### The problem
 Classic template-based detection such as LINEMOD can:

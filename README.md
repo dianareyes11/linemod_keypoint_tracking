@@ -229,6 +229,9 @@ When everything is configured correctly, you can expect:
 
 3) **A visual overlay appears (if enabled)**
    - The coordinate axes are drawn onto the color image and displayed in a window.
+  
+<img width="244" height="263" alt="Screenshot from 2026-01-20 13-19-07" src="https://github.com/user-attachments/assets/f16c33a6-04d1-47b9-a393-904e1304a0f0" />
+
 
 ---
 

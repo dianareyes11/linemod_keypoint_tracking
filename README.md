@@ -1,83 +1,210 @@
 # LINEMOD + Keypoint Pose Pipeline
 
-This project provides a template generation pipeline and a ROS 2 detector node that combines:
-- OpenCV LINEMOD (color templates) for detection
-- ORB keypoints for parallel detection and pose disambiguation via PnP
-- OpenGL rendering for template generation (color + depth)
+This repository implements a practical 6D pose-estimation pipeline for known objects using:
+- **OpenCV LINEMOD** templates for fast detection
+- **ORB keypoints + PnP** for pose disambiguation and refinement
+- **OpenGL rendering** for offline template generation from CAD models (`.ply`)
+- An optional **ROS 2 node** for live runtime detection
 
-## Overview
+---
 
-The flow is split into two stages:
+## 1) Problem solved and how
 
-1) **Template generation**
-   - Render a CAD model from multiple viewpoints with OpenGL.
-   - Save LINEMOD templates and keypoint templates.
+### The problem
+Classic template-based detection such as LINEMOD can:
+- Detect objects quickly,
+- But struggle with **pose ambiguity** (especially in-plane rotations and symmetric views), and
+- Often needs good template coverage to work reliably.
 
-2) **Runtime detection**
-   - Run LINEMOD on live images (ROS 2 node).
-   - Run keypoint matching in parallel and estimate pose with PnP.
-   - Use the keypoint pose to resolve in-plane ambiguity.
+### The approach in this repo
+This project addresses those issues by splitting the system into two stages:
 
-Key output files created by template generation:
-- `linemod_templates.yml.gz` (LINEMOD templates)
-- `linemod_tempPosFile.bin` (template poses)
-- `keypoint_templates.yml.gz` (keypoint templates + 3D points)
+1) **Offline template generation**
+   - Render a CAD model from many viewpoints using OpenGL.
+   - Generate:
+     - LINEMOD templates,
+     - Keypoint templates with associated 3D points.
 
-## Template Generation
+2) **Online runtime detection**
+   - Run LINEMOD on incoming RGB (and optionally depth).
+   - In parallel, run ORB keypoint matching.
+   - Use `solvePnPRansac` on keypoint matches to resolve ambiguous poses.
+   - Optionally refine with ICP using depth.
 
-The template generator renders both color and depth images and extracts templates.
+In short: **LINEMOD proposes detections; keypoints + PnP stabilize the pose.**
 
-Command:
+---
+
+## 2) Repository structure (what each part does)
+
+### Top-level build and entrypoint
+- `CMakeLists.txt`  
+  Builds the core C++ code and the offline template generator executable (`Template_Generator`).
+- `templateGeneration.cpp`  
+  Minimal entrypoint that runs the offline template generation pipeline.
+- `linemod_settings.yml`  
+  Central configuration: camera intrinsics, template sampling distances/angles, detector thresholds, and model location/extension.
+
+### Core pipeline modules
+- `include/` + `src/` contain the main logic:
+  - `TemplateGenerator` orchestrates offline template generation.
+  - `PoseDetection` orchestrates runtime detection and pose estimation.
+  - `HighLevelLineMOD` wraps LINEMOD template creation and detection.
+  - `KeypointDetector` builds keypoint templates and runs ORB matching + PnP pose estimation.
+  - `OpenGLRender` renders color/depth views from models to generate templates and support refinement.
+  - `HighLevelLinemodIcp` provides optional ICP-based depth refinement and best-pose selection.
+
+### Models, shaders, and artifacts
+- `models/`  
+  Input CAD meshes (`.ply`) and per-model metadata (`.yml`).
+- `shader/`  
+  GLSL shaders used by the renderer for color and depth rendering.
+- Generated artifacts (created by offline template generation):
+  - `linemod_templates.yml.gz`
+  - `linemod_tempPosFile.bin`
+  - `keypoint_templates.yml.gz`
+
+### ROS 2 runtime node
+- `ros2/src/linemod_detector/` contains a ROS 2 package that:
+  - Subscribes to compressed RGB and depth images,
+  - Decodes/resizes them to match the configured camera parameters,
+  - Calls the core `PoseDetection` pipeline.
+
+---
+
+## 3) How the offline template generation works (simple diagram)
+
+```text
+[linemod_settings.yml]
+          │
+          ▼
+ [TemplateGenerator]
+          │
+          ▼
+     [models/*.ply]
+          │
+          ▼
+ [OpenGL rendering]
+ (many views: color+depth)
+          │
+          ▼
+   [mask from depth]
+          │
+     ┌────┴─────┐
+     ▼          ▼
+[LINEMOD]   [ORB keypoints]
+templates     + 3D points
+     │          │
+     └────┬─────┘
+          ▼
+ [template files written]
+ linemod_templates.yml.gz
+ linemod_tempPosFile.bin
+ keypoint_templates.yml.gz
+```
+
+This flow corresponds directly to the main loop in `TemplateGenerator::run()`.
+
+---
+
+## 4) How runtime detection works (simple diagram)
+
+```text
+[RGB + Depth input]
+        │
+        ▼
+[ROS2 linemod_detector_node]
+(decode + resize)
+        │
+        ▼
+   [PoseDetection]
+        │
+   ┌────┼──────────────────────────┐
+   ▼    ▼                          ▼
+[LINEMOD match]         [Keypoint ORB + PnP]
+   │                                │
+   └──────────────┬─────────────────┘
+                  ▼
+        [Optional ICP refinement]
+                  ▼
+            [Final 6D pose]
+```
+
+Key behavior: if keypoint PnP succeeds, it can override the LINEMOD pose to resolve ambiguity.
+
+---
+
+## 5) Installation and build instructions
+
+### 5.1 Core C++ build (offline template generator)
+
+Clone the repository and enter it:
+
 ```bash
-cmake -H. -B build
+git clone <REPO_URL>
+cd linemod_keypoint_tracking
+```
+
+From the repository root:
+
+```bash
+cmake -S . -B build
 cmake --build build --config Release --target Template_Generator
+```
+
+Run the offline generator:
+
+```bash
 ./build/Template_Generator
 ```
 
-Template generation is controlled by `linemod_settings.yml`:
-- `video width`, `video height`: render size
-- `camera fx/fy/cx/cy`: camera intrinsics
-- `in plane rotation angle step`: in-plane rotation sampling
-- `distance start/stop/step`: viewpoint radius sampling
-- `icosahedron subdivisions`: number of viewpoints per radius
+The executable entrypoint is `templateGeneration.cpp`.
 
-## LINEMOD Detection
+### 5.2 ROS 2 node build (online detection)
 
-LINEMOD templates are matched against the color image. The detection result is refined with depth
-(if enabled in `linemod_settings.yml`).
+From the `ros2/` directory (inside the cloned repo):
 
-Important settings:
-- `only use color modality`: set to `0` to enable depth modality during template creation
-- `detector threshold`: LINEMOD match threshold
-- `use depth improvement`: enable depth consistency check
-- `depth offset`: depth correction (mm)
-
-## Keypoint Detection and Pose
-
-The keypoint detector uses ORB features:
-- Keypoints are extracted from rendered color templates.
-- The corresponding depth image is used to back-project keypoints into 3D (object coordinates).
-- At runtime, ORB matches are used to estimate pose via `solvePnPRansac`.
-
-Outputs:
-- 2D detection boxes (from keypoint inliers)
-- 6D pose (rotation + translation) from RGB keypoints
-
-This helps disambiguate 180-degree in-plane flips that often occur with LINEMOD.
-
-## ROS 2 Node (Live or Bag)
-
-Build:
 ```bash
 cd ros2
 colcon build --symlink-install --packages-select linemod_detector
 ```
 
+This builds `linemod_detector_node`.
+
+---
+
+## 6) How to use the software
+
+### Step A — Configure camera and sampling
+Edit `linemod_settings.yml`:
+- Camera intrinsics: `camera fx/fy/cx/cy`
+- Rendering size: `video width/height`
+- Sampling: `distance start/stop/step`, `in plane rotation angle step`, `icosahedron subdivisions`
+- Model path and extension: `model folder`, `model file ending`
+
+### Step B — Provide models
+Place your `.ply` model(s) in `models/`. They are discovered automatically based on:
+- `model folder: models/`
+- `model file ending: ".ply"`
+
+Per-model metadata (color range + symmetry) can be provided via `models/<name>.yml`.
+
+### Step C — Generate templates offline
 Run:
+
+```bash
+./build/Template_Generator
+```
+
+This produces the template files used at runtime.
+
+### Step D — Run runtime detection (ROS 2)
+Example:
+
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/posedetection/Documents/Dianis_CPS/LINEMOD/ros2/install/setup.bash
-cd /home/posedetection/Documents/Dianis_CPS/LINEMOD
+source ros2/install/setup.bash
+
 ros2 run linemod_detector linemod_detector_node --ros-args \
   -p class_name:=milk_carton.ply \
   -p color_topic:=/camera/color/image_raw/compressed \
@@ -85,44 +212,44 @@ ros2 run linemod_detector linemod_detector_node --ros-args \
   -p display:=true
 ```
 
-Replay a bag:
-```bash
-ros2 bag play /home/posedetection/Documents/Dianis_CPS/LINEMOD/bags/milk_carton_test2
-```
+The node decodes compressed images and forwards them into `PoseDetection::detect(...)`.
 
-## OpenGL Settings Used
+---
 
-These are hard-coded in the renderer:
-- **GL context:** OpenGL 3.3 Core profile
-- **Depth buffer:** GL_DEPTH_COMPONENT32
-- **Color buffer format:** GL_R16 for depth render target
-- **Depth range:**
-  - Near = 100.0
-  - Far = 10000.0
-- **Projection:**
-  - `glm::perspective(fov, width/height, 100.0f, 10000.0f)`
-- **Depth shader:** linearizes `gl_FragCoord.z` to millimeters
+## 7) Example results / what to expect
 
-The depth shader uses:
-```
-LinearizeDepth(depth) = (2 * near * far) / (far + near - z * (far - near))
-```
+When everything is configured correctly, you can expect:
 
-The rendered depth is stored as 16-bit unsigned and used for template creation.
+1) **Templates are created offline**
+   - LINEMOD templates and keypoint templates are saved to disk.
 
-## File Outputs
+2) **Runtime detections produce poses**
+   - The pipeline finds candidate poses via LINEMOD,
+   - Optionally refines with ICP,
+   - And can override with a more stable keypoint PnP pose if available.
 
-Required at runtime:
-- `linemod_settings.yml`
-- `linemod_templates.yml.gz`
-- `linemod_tempPosFile.bin`
-- `keypoint_templates.yml.gz`
-- `models/*.ply`
-- `shader/*`
+3) **A visual overlay appears (if enabled)**
+   - The coordinate axes are drawn onto the color image and displayed in a window.
 
-## Notes
+---
 
-- For faster template generation, increase `in plane rotation angle step` and lower
-  `icosahedron subdivisions`.
-- If the OpenCV display window does not appear, ensure you are running in a GUI session
-  (not headless SSH).
+## 8) Clean-code checklist for submission
+
+To keep the repository presentation-ready:
+
+- Avoid committing temporary outputs such as build folders:
+  - `build/`
+  - `ros2/build/`, `ros2/install/`, `ros2/log/`
+- Keep only required runtime artifacts and inputs:
+  - `linemod_settings.yml`
+  - generated templates (`*.yml.gz`, `*.bin`)
+  - models and shaders
+
+---
+
+## 9) Key files to read first
+
+If you have limited time, start here:
+- Offline pipeline: `src/TemplateGenerator.cpp`
+- Runtime pipeline: `src/PoseDetection.cpp`
+- ROS 2 entrypoint: `ros2/src/linemod_detector/src/linemod_detector_node.cpp`

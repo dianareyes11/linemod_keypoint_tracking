@@ -138,6 +138,48 @@ Key behavior: if keypoint PnP succeeds, it can override the LINEMOD pose to reso
 
 ### 5.1 Core C++ build (offline template generator)
 
+Clone the repository and enter it:
+
+```bash
+git clone <REPO_URL>
+cd linemod_keypoint_tracking
+```
+
+This flow corresponds directly to the main loop in `TemplateGenerator::run()`.
+
+---
+
+## 4) How runtime detection works (simple diagram)
+
+```text
+[RGB + Depth input]
+        │
+        ▼
+[ROS2 linemod_detector_node]
+(decode + resize)
+        │
+        ▼
+   [PoseDetection]
+        │
+   ┌────┼──────────────────────────┐
+   ▼    ▼                          ▼
+[LINEMOD match]         [Keypoint ORB + PnP]
+   │                                │
+   └──────────────┬─────────────────┘
+                  ▼
+        [Optional ICP refinement]
+                  ▼
+            [Final 6D pose]
+```
+
+Key behavior: if keypoint PnP succeeds, it can override the LINEMOD pose to resolve ambiguity.
+
+---
+
+## 5) Installation and build instructions
+
+### 5.1 Core C++ build (offline template generator)
+
 From the repository root:
 
 ```bash
@@ -154,6 +196,33 @@ Run the offline generator:
 The executable entrypoint is `templateGeneration.cpp`.
 
 ### 5.2 ROS 2 node build (online detection)
+
+From the `ros2/` directory (inside the cloned repo):
+
+```bash
+cd ros2
+colcon build --symlink-install --packages-select linemod_detector
+```
+
+This builds `linemod_detector_node`.
+
+---
+
+## 6) How to use the software
+
+### Step A — Configure camera and sampling
+Edit `linemod_settings.yml`:
+- Camera intrinsics: `camera fx/fy/cx/cy`
+- Rendering size: `video width/height`
+- Sampling: `distance start/stop/step`, `in plane rotation angle step`, `icosahedron subdivisions`
+- Model path and extension: `model folder`, `model file ending`
+
+### Step B — Provide models
+Place your `.ply` model(s) in `models/`. They are discovered automatically based on:
+- `model folder: models/`
+- `model file ending: ".ply"`
+
+Per-model metadata (color range + symmetry) can be provided via `models/<name>.yml`.
 
 From the `ros2/` directory:
 
@@ -227,6 +296,25 @@ When everything is configured correctly, you can expect:
 ---
 
 ## 8) Clean-code checklist for submission
+
+To keep the repository presentation-ready:
+
+- Avoid committing temporary outputs such as build folders:
+  - `build/`
+  - `ros2/build/`, `ros2/install/`, `ros2/log/`
+- Keep only required runtime artifacts and inputs:
+  - `linemod_settings.yml`
+  - generated templates (`*.yml.gz`, `*.bin`)
+  - models and shaders
+
+---
+
+## 9) Key files to read first
+
+If you have limited time, start here:
+- Offline pipeline: `src/TemplateGenerator.cpp`
+- Runtime pipeline: `src/PoseDetection.cpp`
+- ROS 2 entrypoint: `ros2/src/linemod_detector/src/linemod_detector_node.cpp`
 
 To keep the repository presentation-ready:
 

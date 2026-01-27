@@ -85,15 +85,12 @@ In short: **LINEMOD proposes detections; keypoints + PnP stabilize the pose.**
           │
           ▼
  [OpenGL rendering]
- (many views: color+depth)
-          │
-          ▼
-   [mask from depth]
+ (many views: color)
           │
      ┌────┴─────┐
      ▼          ▼
 [LINEMOD]   [ORB keypoints]
-templates     + 3D points
+RGB templates   + 3D points
      │          │
      └────┬─────┘
           ▼
@@ -124,8 +121,6 @@ This flow corresponds directly to the main loop in `TemplateGenerator::run()`.
 [LINEMOD match]         [Keypoint ORB + PnP]
    │                                │
    └──────────────┬─────────────────┘
-                  ▼
-        [Optional ICP refinement]
                   ▼
             [Final 6D pose]
 ```
